@@ -26,11 +26,8 @@ public class StupidUDPClient {
 
         Packet sendString = new Packet(10,9);
 
-        byte[] rcvBuf = new byte[256]; // received bytes
-
 
         InetAddress address = InetAddress.getByName("localhost");
-
 
         DatagramSocket socket = new SimpleSimulatedDatagramSocket(0.2, 200); //SOCKET
 

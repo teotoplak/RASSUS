@@ -1,7 +1,4 @@
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.net.*;
 import java.net.DatagramPacket;
 
@@ -12,12 +9,12 @@ import java.net.DatagramPacket;
 public class UDPClientWorker implements Runnable {
 
     private int port;
-    private Packet packet;
+    private Serializable sendingObject;
     private DatagramSocket socket;
 
-    public UDPClientWorker(int port, Packet packet, DatagramSocket socket) {
+    public UDPClientWorker(int port, Serializable sendingObject, DatagramSocket socket) {
         this.port = port;
-        this.packet = packet;
+        this.sendingObject = sendingObject;
         this.socket = socket;
     }
 
@@ -26,29 +23,25 @@ public class UDPClientWorker implements Runnable {
 
         try {
 
-            String sendString = "Any string...";
+            InetAddress address = InetAddress.getByName("localhost");
 
-            byte[] rcvBuf = new byte[256]; // received bytes
-
-            InetAddress address = null;
-
-            address = InetAddress.getByName("localhost");
+//            DatagramSocket socket = new SimpleSimulatedDatagramSocket(0.2, 200); //SOCKET
 
             ByteArrayOutputStream bStream = new ByteArrayOutputStream();
             ObjectOutput oo = new ObjectOutputStream(bStream);
-            oo.writeObject(packet);
+            oo.writeObject(sendingObject);
             oo.close();
 
+            byte[] serializedMessage = bStream.toByteArray();
 
-            byte[] sendBuf = bStream.toByteArray();
+            System.out.println("Client sending: " + sendingObject.toString());
 
             // create a datagram packet for sending data
-            DatagramPacket packet = new DatagramPacket(sendBuf, sendBuf.length,
+            DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length,
                     address, port);
 
-            socket.send(packet);
-
-            socket.close();
+            // send a datagram packet from this socket
+            socket.send(packet); //SENDTO
 
         } catch (IOException e) {
             e.printStackTrace();

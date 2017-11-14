@@ -20,7 +20,15 @@ public class Node {
 
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws SocketException {
+
+        DatagramSocket socket = new SimpleSimulatedDatagramSocket(0.2, 200); //SOCKET
+        UDPServerWorker serverWorker = new UDPServerWorker(10001);
+        UDPClientWorker clientWorker = new UDPClientWorker(10001, new Packet(10, 9), socket);
+        Thread serverThread = new Thread(serverWorker);
+        serverThread.start();
+        Thread clientThread = new Thread(clientWorker);
+        clientThread.start();
 
     }
 
