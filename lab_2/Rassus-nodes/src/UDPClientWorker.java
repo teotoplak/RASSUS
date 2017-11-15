@@ -1,6 +1,7 @@
 import java.io.*;
 import java.net.*;
 import java.net.DatagramPacket;
+import java.util.List;
 
 
 /**
@@ -8,45 +9,58 @@ import java.net.DatagramPacket;
  */
 public class UDPClientWorker implements Runnable {
 
-    private int port;
-    private Serializable sendingObject;
-    private DatagramSocket socket;
+    private static final int SENDING_DELAY = 2000;
 
-    public UDPClientWorker(int port, Serializable sendingObject, DatagramSocket socket) {
-        this.port = port;
-        this.sendingObject = sendingObject;
+    private List<Integer> ports;
+    private DatagramSocket socket;
+    private EmulatedSystemClock clock;
+    private DataWorker dataWorker;
+    // this nodes port
+    private Integer nodePort;
+
+    public UDPClientWorker(List<Integer> ports, DatagramSocket socket, Integer nodePort) {
+        this.ports = ports;
         this.socket = socket;
+        this.clock = new EmulatedSystemClock();
+        this.dataWorker = new DataWorker(clock);
+        this.nodePort = nodePort;
     }
 
     @Override
     public void run() {
-
         try {
 
-            InetAddress address = InetAddress.getByName("localhost");
+            while (true) {
 
-//            DatagramSocket socket = new SimpleSimulatedDatagramSocket(0.2, 200); //SOCKET
+                Integer currentValue = dataWorker.getSensorData();
+                Packet sendingObject = new Packet(currentValue, nodePort);
 
-            ByteArrayOutputStream bStream = new ByteArrayOutputStream();
-            ObjectOutput oo = new ObjectOutputStream(bStream);
-            oo.writeObject(sendingObject);
-            oo.close();
+                for (Integer port : ports) {
 
-            byte[] serializedMessage = bStream.toByteArray();
+                    InetAddress address = InetAddress.getByName("localhost");
 
-            System.out.println("Client sending: " + sendingObject.toString());
+                    ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+                    ObjectOutput oo = new ObjectOutputStream(bStream);
+                    oo.writeObject(sendingObject);
+                    oo.close();
 
-            // create a datagram packet for sending data
-            DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length,
-                    address, port);
+                    byte[] serializedMessage = bStream.toByteArray();
 
-            // send a datagram packet from this socket
-            socket.send(packet); //SENDTO
+                    System.out.println("Client sending: " + sendingObject.toString());
 
-        } catch (IOException e) {
+                    // create a datagram packet for sending data
+                    DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length,
+                            address, port);
+
+                    // send a datagram packet from this socket
+                    socket.send(packet); //SENDTO
+
+                }
+
+                Thread.sleep(SENDING_DELAY);
+            }
+        } catch (IOException|InterruptedException e) {
             e.printStackTrace();
         }
-
-
     }
 }

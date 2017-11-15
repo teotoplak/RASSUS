@@ -9,10 +9,10 @@ import java.net.SocketException;
  */
 public class UDPServerWorker implements Runnable {
 
-    private int port;
+    private DatagramSocket socket;
 
-    public UDPServerWorker(int port) {
-        this.port = port;
+    public UDPServerWorker(DatagramSocket socket) {
+        this.socket = socket;
     }
 
     @Override
@@ -21,13 +21,6 @@ public class UDPServerWorker implements Runnable {
         try {
 
             byte[] rcvBuf = new byte[1024]; // received bytes
-            String rcvStr;
-
-            // create a UDP socket and bind it to the specified port on the local
-            // host
-            DatagramSocket socket = null; //SOCKET -> BIND
-            socket = new SimpleSimulatedDatagramSocket(port, 0.2, 200);
-
 
             while (true) {
 
