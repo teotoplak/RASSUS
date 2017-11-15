@@ -24,7 +24,7 @@ public class StupidUDPClient {
 
     public static void main(String args[]) throws IOException {
 
-        Packet sendString = new Packet(10,9);
+        Packet sendString = new Packet(10,9,10,12);
 
 
         InetAddress address = InetAddress.getByName("localhost");

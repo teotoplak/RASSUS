@@ -22,8 +22,8 @@ public class Node {
 
         DatagramSocket clientSocket = new SimpleSimulatedDatagramSocket(LOSS_RATE, AVG_DELAY); //SOCKET
         DatagramSocket serverSocket = new SimpleSimulatedDatagramSocket(port, LOSS_RATE, AVG_DELAY);
-        UDPServerWorker serverWorker = new UDPServerWorker(serverSocket);
         UDPClientWorker clientWorker = new UDPClientWorker(otherPorts, clientSocket, port);
+        UDPServerWorker serverWorker = new UDPServerWorker(serverSocket, clientWorker, port);
         Thread serverThread = new Thread(serverWorker);
         serverThread.start();
         Thread clientThread = new Thread(clientWorker);

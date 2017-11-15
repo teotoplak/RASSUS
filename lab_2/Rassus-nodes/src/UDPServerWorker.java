@@ -3,6 +3,9 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Created by teo on 11/14/17.
@@ -10,9 +13,15 @@ import java.net.SocketException;
 public class UDPServerWorker implements Runnable {
 
     private DatagramSocket socket;
+    private UDPClientWorker clientWorker;
+    private Integer nodePort;
 
-    public UDPServerWorker(DatagramSocket socket) {
+    private List<Packet> foreignPackets = new LinkedList<>();
+
+    public UDPServerWorker(DatagramSocket socket, UDPClientWorker clientWorker, Integer nodePort) {
         this.socket = socket;
+        this.clientWorker = clientWorker;
+        this.nodePort = nodePort;
     }
 
     @Override
@@ -24,16 +33,27 @@ public class UDPServerWorker implements Runnable {
 
             while (true) {
 
-                DatagramPacket packet = new DatagramPacket(rcvBuf, rcvBuf.length);
+                DatagramPacket datagramPacket = new DatagramPacket(rcvBuf, rcvBuf.length);
 
                 // receive packet
-                socket.receive(packet); //RECVFROM
+                socket.receive(datagramPacket); //RECVFROM
 
                 ObjectInputStream iStream = new ObjectInputStream(new ByteArrayInputStream(rcvBuf));
-                Packet messageClass = (Packet) iStream.readObject();
+                Packet packet = (Packet) iStream.readObject();
                 iStream.close();
 
-                System.out.println("server: " + messageClass.toString());
+                // if packet was from this node it was confirmation
+                if (packet.getSourcePort() == nodePort) {
+                    System.out.println("#### " + packet);
+                    clientWorker.confirmPacket(packet);
+                } else {
+                    System.out.println("<=== " + packet);
+                    if (!foreignPackets.contains(packet)) {
+                        foreignPackets.add(packet);
+                    }
+                    // send confirmation
+                    clientWorker.sendPacket(packet, packet.getSourcePort());
+                }
 
             }
 

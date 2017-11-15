@@ -1,7 +1,7 @@
 import java.io.*;
 import java.net.*;
 import java.net.DatagramPacket;
-import java.util.List;
+import java.util.*;
 
 
 /**
@@ -9,7 +9,7 @@ import java.util.List;
  */
 public class UDPClientWorker implements Runnable {
 
-    private static final int SENDING_DELAY = 2000;
+    private static final int SENDING_DELAY = 5000;
 
     private List<Integer> ports;
     private DatagramSocket socket;
@@ -17,6 +17,10 @@ public class UDPClientWorker implements Runnable {
     private DataWorker dataWorker;
     // this nodes port
     private Integer nodePort;
+
+    private HashMap<Integer, Integer> valuesHistory = new HashMap<>();
+    private Integer currentPacketNumber = 1;
+    private List<Packet> notConfirmedPackets = new LinkedList<>();
 
     public UDPClientWorker(List<Integer> ports, DatagramSocket socket, Integer nodePort) {
         this.ports = ports;
@@ -33,28 +37,14 @@ public class UDPClientWorker implements Runnable {
             while (true) {
 
                 Integer currentValue = dataWorker.getSensorData();
-                Packet sendingObject = new Packet(currentValue, nodePort);
-
+                valuesHistory.put(currentPacketNumber, currentValue);
                 for (Integer port : ports) {
+                    notConfirmedPackets.add(new Packet(currentPacketNumber, currentValue, nodePort, port));
+                }
+                currentPacketNumber++;
 
-                    InetAddress address = InetAddress.getByName("localhost");
-
-                    ByteArrayOutputStream bStream = new ByteArrayOutputStream();
-                    ObjectOutput oo = new ObjectOutputStream(bStream);
-                    oo.writeObject(sendingObject);
-                    oo.close();
-
-                    byte[] serializedMessage = bStream.toByteArray();
-
-                    System.out.println("Client sending: " + sendingObject.toString());
-
-                    // create a datagram packet for sending data
-                    DatagramPacket packet = new DatagramPacket(serializedMessage, serializedMessage.length,
-                            address, port);
-
-                    // send a datagram packet from this socket
-                    socket.send(packet); //SENDTO
-
+                for(Packet packet : notConfirmedPackets) {
+                    sendPacket(packet,packet.getDestinationPort());
                 }
 
                 Thread.sleep(SENDING_DELAY);
@@ -63,4 +53,31 @@ public class UDPClientWorker implements Runnable {
             e.printStackTrace();
         }
     }
+
+    public void sendPacket(Packet packet, Integer destination) throws IOException {
+
+        InetAddress address = InetAddress.getByName("localhost");
+
+        ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+        ObjectOutput oo = new ObjectOutputStream(bStream);
+        oo.writeObject(packet);
+        oo.close();
+
+        byte[] serializedMessage = bStream.toByteArray();
+
+        System.out.println("===> " + packet.toString());
+
+        DatagramPacket datagramPacket = new DatagramPacket(serializedMessage, serializedMessage.length,
+                address, destination);
+
+        socket.send(datagramPacket);
+    }
+
+    public void confirmPacket(Packet packet) {
+        if (notConfirmedPackets.contains(packet)) {
+            notConfirmedPackets.remove(packet);
+            System.out.println("confirmed: " + packet.toString());
+        }
+    }
+
 }
