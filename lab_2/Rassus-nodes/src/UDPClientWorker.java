@@ -9,8 +9,9 @@ import java.util.*;
  */
 public class UDPClientWorker implements Runnable {
 
-    private static final int SENDING_DELAY = 5000;
+    private static final int SENDING_DELAY = 1000;
 
+    private DataModel dataModel;
     private List<Integer> ports;
     private DatagramSocket socket;
     private EmulatedSystemClock clock;
@@ -22,7 +23,9 @@ public class UDPClientWorker implements Runnable {
     private Integer currentPacketNumber = 1;
     private List<Packet> notConfirmedPackets = new LinkedList<>();
 
-    public UDPClientWorker(List<Integer> ports, DatagramSocket socket, Integer nodePort) {
+
+    public UDPClientWorker(List<Integer> ports, DatagramSocket socket, Integer nodePort, DataModel dataModel) {
+        this.dataModel = dataModel;
         this.ports = ports;
         this.socket = socket;
         this.clock = new EmulatedSystemClock();
@@ -35,11 +38,14 @@ public class UDPClientWorker implements Runnable {
         try {
 
             while (true) {
-
+                dataModel.timeVectorIncrease();
                 Integer currentValue = dataWorker.getSensorData();
+                Long scalarTime = clock.currentTimeMillis();
                 valuesHistory.put(currentPacketNumber, currentValue);
+                Data data = new Data(currentValue, dataModel.getTimeVector(), scalarTime);
+                dataModel.assignNewData(nodePort, data);
                 for (Integer port : ports) {
-                    notConfirmedPackets.add(new Packet(currentPacketNumber, currentValue, nodePort, port));
+                    notConfirmedPackets.add(new Packet(currentPacketNumber, data, nodePort, port));
                 }
                 currentPacketNumber++;
 
@@ -76,6 +82,7 @@ public class UDPClientWorker implements Runnable {
     public void confirmPacket(Packet packet) {
         if (notConfirmedPackets.contains(packet)) {
             notConfirmedPackets.remove(packet);
+            dataModel.timeVectorIncrease();
             System.out.println("confirmed: " + packet.toString());
         }
     }

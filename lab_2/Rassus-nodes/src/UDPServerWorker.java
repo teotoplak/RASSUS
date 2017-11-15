@@ -12,13 +12,13 @@ import java.util.List;
  */
 public class UDPServerWorker implements Runnable {
 
+    private DataModel dataModel;
     private DatagramSocket socket;
     private UDPClientWorker clientWorker;
     private Integer nodePort;
 
-    private List<Packet> foreignPackets = new LinkedList<>();
-
-    public UDPServerWorker(DatagramSocket socket, UDPClientWorker clientWorker, Integer nodePort) {
+    public UDPServerWorker(DatagramSocket socket, UDPClientWorker clientWorker, Integer nodePort, DataModel dataModel) {
+        this.dataModel = dataModel;
         this.socket = socket;
         this.clientWorker = clientWorker;
         this.nodePort = nodePort;
@@ -48,9 +48,8 @@ public class UDPServerWorker implements Runnable {
                     clientWorker.confirmPacket(packet);
                 } else {
                     System.out.println("<=== " + packet);
-                    if (!foreignPackets.contains(packet)) {
-                        foreignPackets.add(packet);
-                    }
+                    dataModel.assignNewData(packet.getSourcePort(), packet.getData());
+
                     // send confirmation
                     clientWorker.sendPacket(packet, packet.getSourcePort());
                 }

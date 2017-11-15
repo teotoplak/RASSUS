@@ -12,18 +12,17 @@ import java.util.List;
 public class Node {
 
     private DatagramSocket socket;
-    private StupidUDPClient client;
-    private StupidUDPServer server;
 
     private static final double LOSS_RATE = 0.2;
     private static final int AVG_DELAY = 200;
 
     public Node(List<Integer> otherPorts, Integer port) throws SocketException {
 
+        DataModel dataModel = new DataModel(otherPorts, port);
         DatagramSocket clientSocket = new SimpleSimulatedDatagramSocket(LOSS_RATE, AVG_DELAY); //SOCKET
         DatagramSocket serverSocket = new SimpleSimulatedDatagramSocket(port, LOSS_RATE, AVG_DELAY);
-        UDPClientWorker clientWorker = new UDPClientWorker(otherPorts, clientSocket, port);
-        UDPServerWorker serverWorker = new UDPServerWorker(serverSocket, clientWorker, port);
+        UDPClientWorker clientWorker = new UDPClientWorker(otherPorts, clientSocket, port, dataModel);
+        UDPServerWorker serverWorker = new UDPServerWorker(serverSocket, clientWorker, port, dataModel);
         Thread serverThread = new Thread(serverWorker);
         serverThread.start();
         Thread clientThread = new Thread(clientWorker);
