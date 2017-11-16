@@ -44,7 +44,6 @@ public class UDPServerWorker implements Runnable {
 
                 // if packet was from this node it was confirmation
                 if (packet.getSourcePort() == nodePort) {
-                    System.out.println("#### " + packet);
                     clientWorker.confirmPacket(packet);
                 } else {
                     System.out.println("<=== " + packet);

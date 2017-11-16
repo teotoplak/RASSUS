@@ -83,7 +83,8 @@ public class UDPClientWorker implements Runnable {
         if (notConfirmedPackets.contains(packet)) {
             notConfirmedPackets.remove(packet);
             dataModel.timeVectorIncrease();
-            System.out.println("confirmed: " + packet.toString());
+            System.out.println("#### " + packet);
+            ;
         }
     }
 
