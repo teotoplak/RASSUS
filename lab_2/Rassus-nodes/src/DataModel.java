@@ -1,5 +1,6 @@
 import com.sun.xml.internal.bind.v2.runtime.reflect.Lister;
 
+import java.lang.reflect.Array;
 import java.util.*;
 
 /**
@@ -51,12 +52,32 @@ public class DataModel {
     }
 
     public void writeDataState() {
+        Set<PortDataPair> dataHistory = this.dataHistory;
+
+
         // vectors
-        System.out.println("-----------------------");
-        for (PortDataPair portDataPair : dataHistory) {
-            System.out.println(portDataPair.getPort() + " " + portDataPair.getData().getTimeVector());
+        List<PortDataPair> list = new ArrayList<>();
+        list.addAll(dataHistory);
+        Collections.sort(list);
+
+        System.out.println("---------- VECTOR -------------");
+        for (PortDataPair portDataPair : list) {
+            System.out.println(portDataPair.getPort() + " " + portDataPair.getData().getTimeVector() + " " + portDataPair.getData().getValue());
         }
         System.out.println("-----------------------");
+
+
+        List<PortScalar> scalarList = new ArrayList<>();
+        for (PortDataPair pair : dataHistory) {
+            scalarList.add(new PortScalar(pair.getPort(), pair.getData().getScalarTime(), pair.getData().getValue()));
+        }
+        Collections.sort(scalarList);
+        System.out.println("---------- SCALAR -------------");
+        for (PortScalar portScalar : scalarList) {
+            System.out.println(portScalar.getPort() + " " + portScalar.getTime() + " " + portScalar.getValue());
+        }
+        System.out.println("-----------------------");
+
     }
 
     private void clearHistory() {
@@ -78,11 +99,11 @@ public class DataModel {
         }
     }
 
-    class PortDataPair {
+    class PortDataPair implements Comparable<PortDataPair>{
         Integer port;
         Data data;
 
-        public PortDataPair(Integer port, Data data) {
+        public PortDataPair(Integer port, Data data)  {
             this.port = port;
             this.data = data;
         }
@@ -112,6 +133,61 @@ public class DataModel {
             result = 31 * result + data.hashCode();
             return result;
         }
+
+        @Override
+        public int compareTo(PortDataPair o) {
+            HashMap<Integer, Integer> firstVector = this.data.getTimeVector();
+            HashMap<Integer, Integer> secondVector = o.getData().getTimeVector();
+            boolean foundIt = false;
+            for (Map.Entry<Integer, Integer> entry : firstVector.entrySet()) {
+                if(entry.getValue() < secondVector.get(entry.getKey())) {
+                    foundIt = true;
+                } else if(entry.getValue() <= secondVector.get(entry.getKey())) {
+                    // nothing
+                } else {
+                    return -1;
+                }
+            }
+            return foundIt ? 1 : 0;
+        }
+
+        @Override
+        public String toString() {
+            return "PortDataPair{" +
+                    "port=" + port +
+                    ", data=" + data +
+                    '}';
+        }
     }
+
+    class PortScalar implements Comparable<PortScalar> {
+        private Integer port;
+        private Long time;
+        private Integer value;
+
+        public PortScalar(Integer port, Long time, Integer value) {
+            this.port = port;
+            this.time = time;
+            this.value = value;
+        }
+
+        @Override
+        public int compareTo(PortScalar o) {
+            return o.time.compareTo(time);
+        }
+
+        public Integer getPort() {
+            return port;
+        }
+
+        public Long getTime() {
+            return time;
+        }
+
+        public Integer getValue() {
+            return value;
+        }
+    }
+
 
 }

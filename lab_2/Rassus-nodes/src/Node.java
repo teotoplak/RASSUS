@@ -13,7 +13,7 @@ public class Node {
 
     private DatagramSocket socket;
 
-    private static final double LOSS_RATE = 0.2;
+    private static final double LOSS_RATE = 0.0;
     private static final int AVG_DELAY = 200;
 
     public Node(List<Integer> otherPorts, Integer port) throws SocketException {

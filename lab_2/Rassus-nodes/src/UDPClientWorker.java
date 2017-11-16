@@ -38,11 +38,11 @@ public class UDPClientWorker implements Runnable {
         try {
 
             while (true) {
-                dataModel.timeVectorIncrease();
                 Integer currentValue = dataWorker.getSensorData();
                 Long scalarTime = clock.currentTimeMillis();
                 valuesHistory.put(currentPacketNumber, currentValue);
-                Data data = new Data(currentValue, dataModel.getTimeVector(), scalarTime);
+                HashMap<Integer, Integer> vectorClone = new HashMap<>(dataModel.getTimeVector());
+                Data data = new Data(currentValue, vectorClone, scalarTime);
                 dataModel.assignNewData(nodePort, data);
                 for (Integer port : ports) {
                     notConfirmedPackets.add(new Packet(currentPacketNumber, data, nodePort, port));
